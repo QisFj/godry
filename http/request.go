@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,18 +13,30 @@ import (
 )
 
 type Request struct {
-	timeout         time.Duration
-	header          http.Header
-	method          string
-	log             Log
-	statusCodeCheck func(int) error
-	responseCheck   func([]byte) error
+	client                      *http.Client
+	timeout                     time.Duration
+	header                      http.Header
+	method                      string
+	log                         Log
+	statusCodeCheck             func(int) error
+	responseCheck               func([]byte) error
+	responseCheckAfterUnmarshal func(interface{}) error
 }
 
+// Do request with default context
 func (r Request) Do(u string, v url.Values, req, resp interface{}) error {
-	var reqReader io.Reader
-	var reqBytes []byte
-	var err error
+	return r.DoCtx(context.Background(), u, v, req, resp)
+}
+
+// Do request
+func (r Request) DoCtx(ctx context.Context, u string, v url.Values, req, resp interface{}) error {
+	var (
+		reqBytes  []byte
+		reqReader io.Reader
+		httpReq   *http.Request
+
+		err error
+	)
 	if req != nil {
 		reqBytes, err = json.Marshal(req)
 		if err != nil {
@@ -31,8 +44,7 @@ func (r Request) Do(u string, v url.Values, req, resp interface{}) error {
 		}
 		reqReader = bytes.NewBuffer(reqBytes)
 	}
-	var httpReq *http.Request
-	httpReq, err = http.NewRequest(r.method, u, reqReader)
+	httpReq, err = http.NewRequestWithContext(ctx, r.method, u, reqReader)
 	if err != nil {
 		return fmt.Errorf("http|new request error: %w", err)
 	}
@@ -47,22 +59,23 @@ func (r Request) Do(u string, v url.Values, req, resp interface{}) error {
 			httpReq.Header.Add(k, v)
 		}
 	}
-	httpClient := http.Client{
-		Timeout: r.timeout,
+	if r.client == nil {
+		r.client = http.DefaultClient
 	}
+	r.client.Timeout = r.timeout
 	if r.log.Logger != nil && r.log.URL {
 		r.log.Logger("http|%s %s", r.method, httpReq.URL)
 	}
 
 	if r.log.Logger != nil && r.log.RequestBody && len(reqBytes) != 0 {
-		if len(reqBytes) >= r.log.RequestBodyLimit {
+		if len(reqBytes) < r.log.RequestBodyLimit {
 			r.log.Logger("http|request body: %s", string(reqBytes))
 		} else {
-			r.log.Logger("http|request body: %s ...", string(reqBytes))
+			r.log.Logger("http|request body: %s ...", string(reqBytes[:r.log.RequestBodyLimit]))
 		}
 	}
 	var httpResp *http.Response
-	httpResp, err = httpClient.Do(httpReq)
+	httpResp, err = r.client.Do(httpReq)
 	if err != nil {
 		return fmt.Errorf("http|do request error: %w", err)
 	}
@@ -80,21 +93,26 @@ func (r Request) Do(u string, v url.Values, req, resp interface{}) error {
 		return fmt.Errorf("http|read response error: %w", err)
 	}
 	if r.log.Logger != nil && r.log.ResponseBody {
-		if len(respBytes) >= r.log.ResponseBodyLimit {
+		if len(respBytes) < r.log.ResponseBodyLimit {
 			r.log.Logger("http|response body: %s", string(respBytes))
 		} else {
-			r.log.Logger("http|response body: %s ...", string(respBytes))
+			r.log.Logger("http|response body: %s ...", string(respBytes[:r.log.ResponseBodyLimit]))
 		}
 	}
 	if r.responseCheck != nil {
-		err = r.responseCheck(respBytes)
-		if err != nil {
+		if err = r.responseCheck(respBytes); err != nil {
 			return fmt.Errorf("http|response response check error: %w", err)
 		}
 	}
-	err = json.Unmarshal(respBytes, resp)
-	if err != nil {
-		return fmt.Errorf("http|response unmarshal error: %w", err)
+	if resp != nil { // ignore response, if resp == nil
+		if err = json.Unmarshal(respBytes, resp); err != nil {
+			return fmt.Errorf("http|response unmarshal error: %w", err)
+		}
+		if r.responseCheckAfterUnmarshal != nil {
+			if err = r.responseCheckAfterUnmarshal(resp); err != nil {
+				return fmt.Errorf("http|response check after unmarshal error: %w", err)
+			}
+		}
 	}
 	return nil
 }

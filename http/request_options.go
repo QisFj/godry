@@ -19,6 +19,7 @@ type Timeout time.Duration
 
 func (Timeout) internal() {}
 func (opt Timeout) On(r *Request) {
+	// this would update Client.Timeout finally
 	r.timeout = time.Duration(opt)
 }
 
@@ -44,8 +45,8 @@ func (opt POST) On(r *Request) {
 
 type StatusCodeCheck struct {
 	optInternal
-	// Equal 和 CheckFunc 只有一个生效，Equal优先
-	// 实际上可能会设置多个StatusCodeCheck的Option，按顺序执行，同时通过才通过
+	// only one of Equal and CheckFunc will take effect
+	// if set many StatusCodeCheck options, all of them must be passed
 	Equal     int
 	CheckFunc func(statusCode int) error
 }
@@ -100,6 +101,29 @@ func (opt ResponseCheck) On(r *Request) {
 	}
 }
 
+type ResponseCheckAfterUnmarshal func(response interface{}) error
+
+func (ResponseCheckAfterUnmarshal) internal() {}
+func (opt ResponseCheckAfterUnmarshal) On(r *Request) {
+	oldFunc := r.responseCheckAfterUnmarshal
+	r.responseCheckAfterUnmarshal = func(v interface{}) error {
+		var err error
+		if oldFunc != nil {
+			err = oldFunc(v)
+			if err != nil {
+				return err
+			}
+		}
+		if opt != nil {
+			err = opt(v)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
 type Log struct {
 	optInternal
 	Logger            func(format string, v ...interface{})
@@ -112,4 +136,13 @@ type Log struct {
 
 func (opt Log) On(r *Request) {
 	r.log = opt
+}
+
+type Client struct {
+	optInternal
+	Client *http.Client
+}
+
+func (opt Client) On(r *Request) {
+	r.client = opt.Client
 }

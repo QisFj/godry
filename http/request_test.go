@@ -126,16 +126,16 @@ func TestRequest(t *testing.T) {
 		}
 		t.Run(fmt.Sprintf("%d|%s", idx, test.name), func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-				// 验证Server收到的请求的Method是预期内的
+				// check if the Method meets expectations
 				require.Equal(t, test.method, req.Method)
 
-				// 验证Server收到的请求的Header是预期内的
+				// check if the Header meets expectations
 				require.Equal(t, test.header, req.Header)
 
-				// 验证Server是否收到了预期的Param
+				// check if the Params meets expectations
 				require.Equal(t, test.params.Encode(), req.URL.Query().Encode())
 
-				// 验证Server是否收到了预期的RequestBody
+				// check if the Request Body meets expectations
 				reqBytes, err := ioutil.ReadAll(req.Body)
 				require.NoError(t, err)
 				if test.req == nil {
@@ -146,14 +146,14 @@ func TestRequest(t *testing.T) {
 					require.Equal(t, test.req, eof(_req))
 				}
 
-				// 返回Response
+				// send response
 				respBytes, err := json.Marshal(test.resp)
 				require.NoError(t, err)
 				_, err = rw.Write(respBytes)
 				require.NoError(t, err)
 			}))
 			defer server.Close()
-			// 验证Client收到了预期的Response
+			// verify that the Client received the expected response
 			_resp := pof(test.resp)
 			r := &Request{}
 			if test.method == http.MethodPost {

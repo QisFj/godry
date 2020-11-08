@@ -1,4 +1,8 @@
-# HTTP Request
+# HTTP 
+
+## QueryBinding
+
+## Request
 
 Example:
 
@@ -9,7 +13,7 @@ import (
     "fmt"
     "net/url"
     
-    "github.com/qisfj/godry/http"
+    "github.com/QisFj/godry/http"
 )
 
 func main(){
