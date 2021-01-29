@@ -48,15 +48,17 @@ func (r Request) DoCtx(ctx context.Context, u string, v url.Values, req, resp in
 	if err != nil {
 		return fmt.Errorf("http|new request error: %w", err)
 	}
-	for key, values := range httpReq.URL.Query() {
-		for _, value := range values {
-			v.Add(key, value)
+	if v != nil {
+		for key, values := range httpReq.URL.Query() {
+			for _, value := range values {
+				v.Add(key, value)
+			}
 		}
+		httpReq.URL.RawQuery = v.Encode()
 	}
-	httpReq.URL.RawQuery = v.Encode()
-	for k, vs := range r.header {
-		for _, v := range vs {
-			httpReq.Header.Add(k, v)
+	for key, values := range r.header {
+		for _, value := range values {
+			httpReq.Header.Add(key, value)
 		}
 	}
 	if r.client == nil {
