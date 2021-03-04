@@ -109,7 +109,7 @@ func (s *queryBindingSetter) set(v reflect.Value, sfs []reflect.StructField, sf 
 		return
 	}
 	s.usedKeys.Add(key)
-	v.Set(reflect.ValueOf(value))
+	v.Set(reflect.ValueOf(value).Convert(sf.Type))
 	return
 }
 
