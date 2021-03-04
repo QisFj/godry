@@ -2,6 +2,12 @@
 
 golang utils.
 
+## cmd
+
+- [inplacegen](./cmd/inplacegen/README.md)
+
+## lib
+
 - [http](./http/README.md)
 - [retry](./retry/README.md)
 - [concurrent](./concurrent/README.md)
@@ -15,3 +21,5 @@ golang utils.
 - [assert](./assert/README.md)
 - [gen](./gen/README.md)
 - [constant](./constant/README.md)
+- [config](./config/README.md)
+- [sort](./sort/README.md)
