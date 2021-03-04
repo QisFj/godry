@@ -8,7 +8,7 @@ import (
 	"text/template"
 )
 
-func goSrcFileName(filename string) string {
+func GoSrcFileName(filename string) string {
 	if !strings.HasSuffix(filename, ".go") {
 		filename += ".go"
 	}
@@ -17,37 +17,37 @@ func goSrcFileName(filename string) string {
 
 func Gen(filename, tmpl string, data interface{}, options ...Option) {
 	cfg := newConfig(options...)
-	filename = goSrcFileName(filename)
+	filename = GoSrcFileName(filename)
 	var t *template.Template
 	var err error
 	t, err = template.New("").Delims(cfg.tmplLDelimiter, cfg.tmplRDelimiter).Funcs(map[string]interface{}{
 		"Title": strings.Title,
 	}).Parse(tmpl)
 	if err != nil {
-		log.Fatalf("[Error] Template Parse Error: %s", err)
+		log.Fatalf("[Error] template parse error: %s", err)
 	}
 
 	f, err := os.Create(filename)
 	if err != nil {
-		log.Fatalf("[Error] Create %s Error: %s", filename, err)
+		log.Fatalf("[Error] create %s Error: %s", filename, err)
 	}
 	defer f.Close()
 	err = t.Execute(f, data)
 	if err != nil {
-		log.Fatalf("[Error] Execute %s Error: %s", filename, err)
+		log.Fatalf("[Error] execute %s Error: %s", filename, err)
 	}
-	log.Printf("[Success] Generate %s Success", filename)
+	log.Printf("[Success] generate %s success", filename)
 	if cfg.gofmt {
 		GoFmt(filename)
 	}
 }
 
 func GoFmt(filename string) {
-	filename = goSrcFileName(filename)
+	filename = GoSrcFileName(filename)
 	err := exec.Command("gofmt", "-w", filename).Start()
 	if err != nil {
-		log.Printf("[Warn] gofmt %s Error: %s\n", filename, err)
+		log.Printf("[Warn] gofmt %s error: %s\n", filename, err)
 		return
 	}
-	log.Printf("[Success] gofmt %s Success\n", filename)
+	log.Printf("[Success] gofmt %s success\n", filename)
 }
