@@ -4,6 +4,8 @@ run function concurrently.
 
 ## Usage
 
+see unit test files for more examples. 
+
 ```go
 package main
 
