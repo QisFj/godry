@@ -1,4 +1,4 @@
-package http
+package request
 
 import (
 	"encoding/json"
@@ -155,13 +155,20 @@ func TestRequest(t *testing.T) {
 			defer server.Close()
 			// verify that the Client received the expected response
 			_resp := pof(test.resp)
-			r := &Request{}
+			r := New().With(Options.Log(Log{
+				Logger:            t.Logf,
+				URL:               true,
+				RequestBody:       true,
+				RequestBodyLimit:  0,
+				ResponseBody:      true,
+				ResponseBodyLimit: 0,
+			}))
 			if test.method == http.MethodPost {
-				r.With(POST{})
+				r.With(Options.Method(http.MethodPost))
 			}
 			for k, vs := range test.header {
 				for _, v := range vs {
-					r.With(Header{Key: k, Value: v})
+					r.With(Options.Header(k, v))
 				}
 			}
 			for k, vs := range basicHeader {
@@ -169,6 +176,15 @@ func TestRequest(t *testing.T) {
 					test.header.Add(k, v)
 				}
 			}
+			r.With(Options.CheckResponseBeforeUnmarshal(func(statusCode int, body []byte) error {
+				require.Equal(t, http.StatusOK, statusCode)
+				return nil
+			}))
+			r.With(Options.CheckResponseAfterUnmarshal(func(statusCode int, v interface{}) error {
+				require.Equal(t, http.StatusOK, statusCode)
+				require.Equal(t, test.resp, eof(v))
+				return nil
+			}))
 			require.NoError(t, r.Do(server.URL, test.params, test.req, _resp))
 			require.Equal(t, test.resp, eof(_resp))
 		})

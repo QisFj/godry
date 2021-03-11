@@ -4,11 +4,6 @@ import "reflect"
 
 //go:generate go run map.gen.go
 
-func getLenAndIsNil(slice interface{}) (l int, n bool) {
-	v := reflect.ValueOf(slice)
-	return v.Len(), v.IsNil()
-}
-
 type InterfaceMapFunc func(i int, v interface{}) interface{}
 
 func MapInterface(slice interface{}, f InterfaceMapFunc) []interface{} {

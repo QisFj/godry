@@ -5,8 +5,7 @@ import (
 )
 
 func TestAssert(t *testing.T) {
-	var i interface{}
-	i = "1"
+	var i interface{} = "1"
 	defer Catch(func(violation Violation) {
 		t.Logf("Cacth Violation: %s", violation)
 	})

@@ -8,7 +8,9 @@ golang utils.
 
 ## lib
 
-- [http](./http/README.md)
+- http
+    + [request](./http/request/README.md)
+    + [binding](./http/binding/README.md)
 - [retry](./retry/README.md)
 - [concurrent](./concurrent/README.md)
 - [multierr](./multierr/README.md)

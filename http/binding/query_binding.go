@@ -1,4 +1,4 @@
-package http
+package binding
 
 import (
 	"fmt"
@@ -12,16 +12,6 @@ import (
 	"github.com/QisFj/godry/set"
 	"github.com/QisFj/godry/slice"
 )
-
-type Binding interface {
-	Bind(*http.Request, interface{}) error
-}
-
-type BindingFunc func(*http.Request, interface{}) error
-
-func (f BindingFunc) Bind(r *http.Request, v interface{}) error {
-	return f(r, v)
-}
 
 type QueryBinding struct {
 	Validate ValidateFunc
