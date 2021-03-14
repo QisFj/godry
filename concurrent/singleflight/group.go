@@ -14,7 +14,7 @@ type Group struct {
 // about forgetAfter:
 // - timer start before fn be called
 // - only make sense if this call not hit cache, so you can't reset forget time
-/// - non-positive value means never forget
+// - non-positive value means never forget
 func (g *Group) Do(key string, fn func() (interface{}, error), forgetAfter time.Duration) (interface{}, error) {
 	g.mu.Lock()
 	if g.m == nil {
