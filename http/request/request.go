@@ -110,3 +110,8 @@ func (r *Request) With(opts ...Option) *Request {
 	}
 	return r
 }
+
+func (r Request) Clone() *Request {
+	r.header = r.header.Clone()
+	return &r
+}
