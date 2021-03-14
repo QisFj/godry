@@ -40,7 +40,7 @@ func TestGroup(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		wg.Add(1)
 		go func() {
-			defer wg.Wait()
+			defer wg.Done()
 			v, e := g.Do(".", count, 50*time.Millisecond)
 			require.NoError(t, e)
 			require.Equal(t, 4, v)
