@@ -126,16 +126,6 @@ func queryBindingSetterConvertValues(values []string, rt reflect.Type) (interfac
 		reflect.Array,
 		reflect.Complex64, reflect.Complex128:
 		return nil, fmt.Errorf("unsupported type: %v", rt)
-	case reflect.Ptr: // pointer (1)
-		rt = rt.Elem()
-		ptr := reflect.New(rt)
-		var v interface{}
-		var err error
-		if v, err = queryBindingSetterConvertValues(values, rt); err != nil {
-			return nil, err
-		}
-		ptr.Elem().Set(reflect.ValueOf(v))
-		return ptr.Interface(), nil
 	// supported plural value kind (1):
 	case reflect.Slice:
 		list := reflect.MakeSlice(rt, len(values), len(values))
@@ -146,9 +136,19 @@ func queryBindingSetterConvertValues(values []string, rt reflect.Type) (interfac
 			if v, err = queryBindingSetterConvertValue(value, rt); err != nil {
 				return nil, err
 			}
-			list.Index(i).Set(reflect.ValueOf(v))
+			list.Index(i).Set(reflect.ValueOf(v).Convert(rt))
 		}
 		return list.Interface(), nil
+	case reflect.Ptr: // pointer (1)
+		rt = rt.Elem()
+		ptr := reflect.New(rt)
+		var v interface{}
+		var err error
+		if v, err = queryBindingSetterConvertValues(values, rt); err != nil {
+			return nil, err
+		}
+		ptr.Elem().Set(reflect.ValueOf(v).Convert(rt))
+		return ptr.Interface(), nil
 	case // supported single value kind (14):
 		reflect.Bool, reflect.String,
 		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
@@ -163,8 +163,22 @@ func queryBindingSetterConvertValues(values []string, rt reflect.Type) (interfac
 	panic("never reached code")
 }
 
+// convert value for type
+// support kinds:
+// - ptr
+// - single value kinds: bool, string, int, float
 func queryBindingSetterConvertValue(value string, rt reflect.Type) (interface{}, error) {
 	switch rt.Kind() {
+	case reflect.Ptr:
+		rt = rt.Elem()
+		ptr := reflect.New(rt)
+		var v interface{}
+		var err error
+		if v, err = queryBindingSetterConvertValue(value, rt); err != nil {
+			return nil, err
+		}
+		ptr.Elem().Set(reflect.ValueOf(v).Convert(rt))
+		return ptr.Interface(), nil
 	case reflect.Bool:
 		return strconv.ParseBool(value)
 	case reflect.String:
@@ -176,7 +190,7 @@ func queryBindingSetterConvertValue(value string, rt reflect.Type) (interface{},
 	case reflect.Float32, reflect.Float64:
 		return queryBindingSetterConvertFloatValue(value, rt)
 	default:
-		panic("never reached code")
+		return nil, fmt.Errorf("can't convert value for type: %v", rt)
 	}
 }
 
