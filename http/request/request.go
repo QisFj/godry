@@ -85,7 +85,7 @@ func (r Request) DoCtx(ctx context.Context, u string, v url.Values, reqObj, resp
 	if respBody, err = ioutil.ReadAll(resp.Body); err != nil {
 		return fmt.Errorf("requset|read response body error: %w", err)
 	}
-	r.log.LogResponseBody(reqBody)
+	r.log.LogResponseBody(respBody)
 	if err = r.checkResponseBeforeUnmarshalFuncs.Check(resp.StatusCode, respBody); err != nil {
 		return fmt.Errorf("request|check response before unmarshal failed: %w", err)
 	}
