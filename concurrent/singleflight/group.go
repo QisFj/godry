@@ -11,11 +11,7 @@ type Group struct {
 	m  map[string]*Call
 }
 
-// about forgetAfter:
-// - timer start before fn be called
-// - only make sense if this call not hit cache, so you can't reset forget time
-// - non-positive value means never forget
-func (g *Group) Do(key string, fn func() (interface{}, error), forgetAfter time.Duration) (interface{}, error) {
+func (g *Group) getCall(key string, fn func() (interface{}, error), forgetAfter time.Duration) *Call {
 	g.mu.Lock()
 	if g.m == nil {
 		g.m = make(map[string]*Call)
@@ -29,7 +25,20 @@ func (g *Group) Do(key string, fn func() (interface{}, error), forgetAfter time.
 		}
 	}
 	g.mu.Unlock()
-	return c.Do()
+	return c
+}
+
+// about forgetAfter:
+// - timer start before fn be called
+// - only make sense if this call not hit cache, so you can't reset forget time
+// - non-positive value means never forget
+func (g *Group) Do(key string, fn func() (interface{}, error), forgetAfter time.Duration) (interface{}, error) {
+	return g.getCall(key, fn, forgetAfter).Do()
+}
+
+// unblock Do, return a result channel
+func (g *Group) DoChan(key string, fn func() (interface{}, error), forgetAfter time.Duration) <-chan Result {
+	return g.getCall(key, fn, forgetAfter).DoChan()
 }
 
 func (g *Group) Forget(key string) {

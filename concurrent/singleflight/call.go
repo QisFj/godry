@@ -8,8 +8,7 @@ type Call struct {
 	once sync.Once
 	fn   func() (interface{}, error)
 
-	value interface{}
-	err   error
+	result Result
 }
 
 func NewCall(fn func() (interface{}, error)) *Call {
@@ -18,7 +17,19 @@ func NewCall(fn func() (interface{}, error)) *Call {
 
 func (c *Call) Do() (interface{}, error) {
 	c.once.Do(func() {
-		c.value, c.err = c.fn()
+		c.result.Val, c.result.Err = c.fn()
 	})
-	return c.value, c.err
+	return c.result.Val, c.result.Err
+}
+
+func (c *Call) DoChan() <-chan Result {
+	ch := make(chan Result, 1)
+	go func() {
+		val, err := c.Do()
+		ch <- Result{
+			Val: val,
+			Err: err,
+		}
+	}()
+	return ch
 }
