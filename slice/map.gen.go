@@ -25,10 +25,17 @@ package slice
 
 << range $t := .>>type << $t | Title >>MapFunc func(i int, v interface{}) << $t >>
 << end >>
+var (
+<< range $t := .>>	typeAssertMapFor<< $t | Title >> << $t | Title >>MapFunc = func(_ int, v interface{}) << $t >> { return v.(<< $t >>) }
+<<end>>
+)
 << range $t := .>>func Map<< $t | Title >>(slice interface{}, f << $t | Title >>MapFunc) []<< $t >> {
 	sv := valueOf(slice)
 	if sv.IsNil() {
 		return nil
+	}
+	if f == nil {
+		f = typeAssertMapFor<< $t | Title >>
 	}
 	list := make([]<<$t>>, 0, sv.Len())
 	foreach(sv, func(i int, v interface{}) {

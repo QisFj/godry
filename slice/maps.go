@@ -5,10 +5,19 @@ type StringMapFunc func(i int, v interface{}) string
 type IntMapFunc func(i int, v interface{}) int
 type UintMapFunc func(i int, v interface{}) uint
 
+var (
+	typeAssertMapForString StringMapFunc = func(_ int, v interface{}) string { return v.(string) }
+	typeAssertMapForInt    IntMapFunc    = func(_ int, v interface{}) int { return v.(int) }
+	typeAssertMapForUint   UintMapFunc   = func(_ int, v interface{}) uint { return v.(uint) }
+)
+
 func MapString(slice interface{}, f StringMapFunc) []string {
 	sv := valueOf(slice)
 	if sv.IsNil() {
 		return nil
+	}
+	if f == nil {
+		f = typeAssertMapForString
 	}
 	list := make([]string, 0, sv.Len())
 	foreach(sv, func(i int, v interface{}) {
@@ -21,6 +30,9 @@ func MapInt(slice interface{}, f IntMapFunc) []int {
 	if sv.IsNil() {
 		return nil
 	}
+	if f == nil {
+		f = typeAssertMapForInt
+	}
 	list := make([]int, 0, sv.Len())
 	foreach(sv, func(i int, v interface{}) {
 		list = append(list, f(i, v))
@@ -31,6 +43,9 @@ func MapUint(slice interface{}, f UintMapFunc) []uint {
 	sv := valueOf(slice)
 	if sv.IsNil() {
 		return nil
+	}
+	if f == nil {
+		f = typeAssertMapForUint
 	}
 	list := make([]uint, 0, sv.Len())
 	foreach(sv, func(i int, v interface{}) {
