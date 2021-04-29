@@ -11,15 +11,6 @@ type options struct{}
 
 var Options options
 
-func (options) Header(k, v string) Option {
-	return func(r *Request) {
-		if r.header == nil {
-			r.header = http.Header{}
-		}
-		r.header.Add(k, v)
-	}
-}
-
 func (options) Method(method string) Option {
 	return func(r *Request) {
 		r.method = method

@@ -13,13 +13,20 @@ import (
 
 // zero value is not ready for use, call New
 type Request struct {
-	client                            *http.Client
-	header                            http.Header
-	method                            string
-	log                               Log
-	codec                             Codec
+	client *http.Client
+
+	requestHeader   http.Header
+	responseHeaders []http.Header
+
+	method string
+	log    Log
+	codec  Codec
+
 	checkResponseBeforeUnmarshalFuncs CheckResponseBeforeUnmarshalFuncs
 	checkResponseAfterUnmarshalFuncs  CheckResponseAfterUnmarshalFuncs
+
+	requestHookFuncs  RequestHookFuncs
+	responseHookFuncs ResponseHookFuncs
 }
 
 func New() *Request {
@@ -63,10 +70,13 @@ func (r Request) DoCtx(ctx context.Context, u string, v url.Values, reqObj, resp
 		}
 		req.URL.RawQuery = v.Encode()
 	}
-	for key, values := range r.header {
+	for key, values := range r.requestHeader {
 		for _, value := range values {
 			req.Header.Add(key, value)
 		}
+	}
+	if err = r.requestHookFuncs.Hook(req); err != nil {
+		return fmt.Errorf("request|hook request error: %w", err)
 	}
 	if r.client == nil {
 		r.client = http.DefaultClient
@@ -81,6 +91,16 @@ func (r Request) DoCtx(ctx context.Context, u string, v url.Values, reqObj, resp
 	defer func() {
 		_ = resp.Body.Close()
 	}()
+	if err = r.responseHookFuncs.Hook(resp); err != nil {
+		return fmt.Errorf("request|hook response error: %w", err)
+	}
+	for key, values := range resp.Header {
+		for _, value := range values {
+			for _, headerGetter := range r.responseHeaders {
+				headerGetter.Add(key, value)
+			}
+		}
+	}
 	var respBody []byte
 	if respBody, err = ioutil.ReadAll(resp.Body); err != nil {
 		return fmt.Errorf("requset|read response body error: %w", err)
@@ -89,7 +109,6 @@ func (r Request) DoCtx(ctx context.Context, u string, v url.Values, reqObj, resp
 	if err = r.checkResponseBeforeUnmarshalFuncs.Check(resp.StatusCode, respBody); err != nil {
 		return fmt.Errorf("request|check response before unmarshal failed: %w", err)
 	}
-
 	if respObj != nil { // ignore response, if respObj == nil
 		if err = r.codec.Unmarshal(respBody, respObj); err != nil {
 			return fmt.Errorf("request|response body unmarshal error: %w", err)
@@ -112,6 +131,7 @@ func (r *Request) With(opts ...Option) *Request {
 }
 
 func (r Request) Clone() *Request {
-	r.header = r.header.Clone()
+	r.requestHeader = r.requestHeader.Clone()
+	// should not clone responseHeaders
 	return &r
 }

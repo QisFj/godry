@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httputil"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -16,12 +17,13 @@ import (
 
 func TestRequest(t *testing.T) {
 	tests := []struct {
-		name   string      // default "[unnamed]"
-		method string      // default "GET"
-		header http.Header // default nil
-		params url.Values  // default url.Values{}
-		req    interface{} // default nil
-		resp   interface{} // default struct{}{}
+		name       string      // default "[unnamed]"
+		method     string      // default "GET"
+		reqHeader  http.Header // default nil
+		respHeader http.Header // default nil
+		params     url.Values  // default url.Values{}
+		req        interface{} // default nil
+		resp       interface{} // default struct{}{}
 	}{
 		{
 			name: "GET",
@@ -83,8 +85,12 @@ func TestRequest(t *testing.T) {
 			},
 		},
 		{
-			name:   "Header",
-			header: http.Header{"Header-Key": {"Header-Value"}},
+			name:      "Header",
+			reqHeader: http.Header{"Header-Key": {"Header-Value"}},
+		},
+		{
+			name:       "GetHeader",
+			respHeader: http.Header{"Header-Key": {"Header-Value"}},
 		},
 	}
 	pof := func(i interface{}) interface{} {
@@ -101,10 +107,10 @@ func TestRequest(t *testing.T) {
 		if test.method == "" {
 			test.method = "GET"
 		}
-		if test.header == nil {
-			test.header = make(http.Header)
+		if test.reqHeader == nil {
+			test.reqHeader = make(http.Header)
 		}
-		// basic header
+		// basic reqHeader
 		basicHeader := http.Header{
 			"Accept-Encoding": {"gzip"},
 			"User-Agent":      {"Go-http-client/1.1"},
@@ -130,7 +136,7 @@ func TestRequest(t *testing.T) {
 				require.Equal(t, test.method, req.Method)
 
 				// check if the Header meets expectations
-				require.Equal(t, test.header, req.Header)
+				require.Equal(t, test.reqHeader, req.Header)
 
 				// check if the Params meets expectations
 				require.Equal(t, test.params.Encode(), req.URL.Query().Encode())
@@ -147,6 +153,11 @@ func TestRequest(t *testing.T) {
 				}
 
 				// send response
+				for k, vs := range test.respHeader {
+					for _, v := range vs {
+						rw.Header().Add(k, v)
+					}
+				}
 				respBytes, err := json.Marshal(test.resp)
 				require.NoError(t, err)
 				_, err = rw.Write(respBytes)
@@ -166,16 +177,18 @@ func TestRequest(t *testing.T) {
 			if test.method == http.MethodPost {
 				r.With(Options.Method(http.MethodPost))
 			}
-			for k, vs := range test.header {
+			for k, vs := range test.reqHeader {
 				for _, v := range vs {
 					r.With(Options.Header(k, v))
 				}
 			}
 			for k, vs := range basicHeader {
 				for _, v := range vs {
-					test.header.Add(k, v)
+					test.reqHeader.Add(k, v)
 				}
 			}
+			respHeader := http.Header{}
+			r.With(Options.GetResponseHeader(respHeader))
 			r.With(Options.CheckResponseBeforeUnmarshal(func(statusCode int, body []byte) error {
 				require.Equal(t, http.StatusOK, statusCode)
 				return nil
@@ -185,8 +198,29 @@ func TestRequest(t *testing.T) {
 				require.Equal(t, test.resp, eof(v))
 				return nil
 			}))
+			r.With(Options.HookRequest(func(req *http.Request) error {
+				dumpBytes, err := httputil.DumpRequest(req, true)
+				if err != nil {
+					return err
+				}
+				t.Logf("request dump: %s", string(dumpBytes))
+				return nil
+			}))
+			r.With(Options.HookResponse(func(resp *http.Response) error {
+				dumpBytes, err := httputil.DumpResponse(resp, true)
+				if err != nil {
+					return err
+				}
+				t.Logf("response dump: %s", string(dumpBytes))
+				return nil
+			}))
 			require.NoError(t, r.Do(server.URL, test.params, test.req, _resp))
 			require.Equal(t, test.resp, eof(_resp))
+			// check if the Header meets expectations
+			// only check if all expected header exsit and meets expectations
+			for k, vs := range test.respHeader {
+				require.Equal(t, vs, respHeader.Values(k), "response header %s", k)
+			}
 		})
 	}
 }
