@@ -47,7 +47,7 @@ func (errs *Errs) Error() error {
 	}
 	errs.rw.RLock()
 	defer errs.rw.RUnlock()
-	if errs == nil || len(errs.errors) == 0 {
+	if len(errs.errors) == 0 {
 		return nil
 	}
 	if errs.formatter == nil {
@@ -62,5 +62,5 @@ func (errs *Errs) IsNil() bool {
 	}
 	errs.rw.RLock()
 	defer errs.rw.RUnlock()
-	return errs == nil || len(errs.errors) == 0
+	return len(errs.errors) == 0
 }
