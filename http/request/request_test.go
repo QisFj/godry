@@ -1,6 +1,7 @@
 package request
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -179,7 +180,7 @@ func TestRequest(t *testing.T) {
 			}
 			for k, vs := range test.reqHeader {
 				for _, v := range vs {
-					r.With(Options.Header(k, v))
+					r.With(Options.AddHeader(k, v))
 				}
 			}
 			for k, vs := range basicHeader {
@@ -198,7 +199,7 @@ func TestRequest(t *testing.T) {
 				require.Equal(t, test.resp, eof(v))
 				return nil
 			}))
-			r.With(Options.HookRequest(func(req *http.Request) error {
+			r.With(Options.HookRequest(func(ctx context.Context, req *http.Request) error {
 				dumpBytes, err := httputil.DumpRequest(req, true)
 				if err != nil {
 					return err
@@ -206,7 +207,7 @@ func TestRequest(t *testing.T) {
 				t.Logf("request dump: %s", string(dumpBytes))
 				return nil
 			}))
-			r.With(Options.HookResponse(func(resp *http.Response) error {
+			r.With(Options.HookResponse(func(ctx context.Context, resp *http.Response) error {
 				dumpBytes, err := httputil.DumpResponse(resp, true)
 				if err != nil {
 					return err

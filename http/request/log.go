@@ -1,11 +1,13 @@
 package request
 
 import (
+	"context"
 	"net/url"
 )
 
 type Log struct {
 	Logger            func(format string, v ...interface{})
+	CtxLogger         func(ctx context.Context, format string, v ...interface{}) // if this has been set, Logger make no sense
 	URL               bool
 	RequestBody       bool
 	RequestBodyLimit  int // 0 means no limit
@@ -13,25 +15,36 @@ type Log struct {
 	ResponseBodyLimit int // 0 means no limit
 }
 
-func (log Log) LogURL(m string, u *url.URL) {
-	if log.Logger == nil && !log.URL {
+func (log Log) log(ctx context.Context, format string, v ...interface{}) {
+	if log.Logger == nil && log.CtxLogger == nil {
 		return
 	}
-	log.Logger("request|%s %s", m, u)
+	if log.CtxLogger != nil {
+		log.CtxLogger(ctx, format, v...)
+	} else {
+		log.Logger(format, v...)
+	}
 }
 
-func (log Log) LogRequestBody(body []byte) {
-	if log.Logger == nil && !log.RequestBody {
+func (log Log) LogURL(ctx context.Context, m string, u *url.URL) {
+	if !log.URL {
 		return
 	}
-	log.Logger("request|request body: %s", logLimit(body, log.RequestBodyLimit))
+	log.log(ctx, "request|%s %s", m, u)
 }
 
-func (log Log) LogResponseBody(body []byte) {
-	if log.Logger == nil && !log.ResponseBody {
+func (log Log) LogRequestBody(ctx context.Context, body []byte) {
+	if !log.RequestBody {
 		return
 	}
-	log.Logger("request|response body: %s", logLimit(body, log.ResponseBodyLimit))
+	log.log(ctx, "request|request body: %s", logLimit(body, log.RequestBodyLimit))
+}
+
+func (log Log) LogResponseBody(ctx context.Context, body []byte) {
+	if !log.ResponseBody {
+		return
+	}
+	log.log(ctx, "request|response body: %s", logLimit(body, log.ResponseBodyLimit))
 }
 
 func logLimit(data []byte, limit int) string {

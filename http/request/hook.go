@@ -1,27 +1,30 @@
 package request
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
-type RequestHookFunc func(req *http.Request) error
+type RequestHookFunc func(ctx context.Context, req *http.Request) error
 
 type RequestHookFuncs []RequestHookFunc
 
-func (fs RequestHookFuncs) Hook(req *http.Request) error {
+func (fs RequestHookFuncs) Hook(ctx context.Context, req *http.Request) error {
 	for _, f := range fs {
-		if err := f(req); err != nil {
+		if err := f(ctx, req); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-type ResponseHookFunc func(resp *http.Response) error
+type ResponseHookFunc func(ctx context.Context, resp *http.Response) error
 
 type ResponseHookFuncs []ResponseHookFunc
 
-func (fs ResponseHookFuncs) Hook(resp *http.Response) error {
+func (fs ResponseHookFuncs) Hook(ctx context.Context, resp *http.Response) error {
 	for _, f := range fs {
-		if err := f(resp); err != nil {
+		if err := f(ctx, resp); err != nil {
 			return err
 		}
 	}

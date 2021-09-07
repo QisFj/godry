@@ -75,23 +75,24 @@ func (r Request) DoCtx(ctx context.Context, u string, v url.Values, reqObj, resp
 			req.Header.Add(key, value)
 		}
 	}
-	if err = r.requestHookFuncs.Hook(req); err != nil {
+	if err = r.requestHookFuncs.Hook(ctx, req); err != nil {
 		return fmt.Errorf("request|hook request error: %w", err)
 	}
-	if r.client == nil {
-		r.client = http.DefaultClient
+	client := r.client
+	if client == nil {
+		client = http.DefaultClient
 	}
-	r.log.LogURL(req.Method, req.URL)
-	r.log.LogRequestBody(reqBody)
+	r.log.LogURL(ctx, req.Method, req.URL)
+	r.log.LogRequestBody(ctx, reqBody)
 
 	var resp *http.Response
-	if resp, err = r.client.Do(req); err != nil {
+	if resp, err = client.Do(req); err != nil {
 		return fmt.Errorf("requset|do http request error: %w", err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-	if err = r.responseHookFuncs.Hook(resp); err != nil {
+	if err = r.responseHookFuncs.Hook(ctx, resp); err != nil {
 		return fmt.Errorf("request|hook response error: %w", err)
 	}
 	for key, values := range resp.Header {
@@ -105,7 +106,7 @@ func (r Request) DoCtx(ctx context.Context, u string, v url.Values, reqObj, resp
 	if respBody, err = ioutil.ReadAll(resp.Body); err != nil {
 		return fmt.Errorf("requset|read response body error: %w", err)
 	}
-	r.log.LogResponseBody(respBody)
+	r.log.LogResponseBody(ctx, respBody)
 	if err = r.checkResponseBeforeUnmarshalFuncs.Check(resp.StatusCode, respBody); err != nil {
 		return fmt.Errorf("request|check response before unmarshal failed: %w", err)
 	}
