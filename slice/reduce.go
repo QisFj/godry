@@ -1,9 +1,9 @@
 package slice
 
-func Reduce(slice interface{}, initReduceValue interface{}, f func(reduceValue interface{}, i int, v interface{}) interface{}) (reduceValue interface{}) {
+func Reduce[I, V any](slice []I, initReduceValue V, f func(reduceValue V, index int, value I) V) (reduceValue V) {
 	reduceValue = initReduceValue
-	Foreach(slice, func(i int, v interface{}) {
+	for i, v := range slice {
 		reduceValue = f(reduceValue, i, v)
-	})
+	}
 	return
 }

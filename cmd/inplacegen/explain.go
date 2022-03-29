@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"reflect"
 	"regexp"
 	"strings"
 	"text/template"
@@ -91,8 +90,8 @@ func explainToGen(lines []string, prefix string) (result []string, err error) {
 		result = append(result, lines[i])
 	}
 	var arg Arg
-	if arg, err = explainToArg(slice.MapString(lines[1:i], func(i int, v interface{}) string {
-		return strings.TrimPrefix(v.(string), prefix)
+	if arg, err = explainToArg(slice.Map(lines[1:i], func(_ int, v string) string {
+		return strings.TrimPrefix(v, prefix)
 	})); err != nil {
 		return nil, err
 	}
@@ -132,9 +131,9 @@ func explainToArg(lines []string) (arg Arg, err error) {
 func (arg Arg) Gen() (result []string) {
 	it := graph.NewIter(arg.Data, false)
 	for it.Next() {
-		entries := slice.MapT(it.Get(), reflect.TypeOf(Entry{}), func(i int, v interface{}) interface{} {
-			return v
-		}).([]Entry)
+		entries := slice.Map(it.Get(), func(_ int, v graph.NodeI) Entry {
+			return v.(Entry)
+		})
 		replaced := replaceT(arg.Template, leftD, rightD, entries)
 		sb := &strings.Builder{}
 		err := template.Must(template.New("").Delims(leftD, rightD).Parse(replaced)).Execute(sb, TemplateData(entries, arg.ExData))
@@ -152,8 +151,8 @@ func TemplateData(entries []Entry, exData Data) interface{} {
 		mm[fmt.Sprintf("e%d", i+1)] = entryToMap(e)
 	}
 	for i, g := range exData {
-		mm[fmt.Sprintf("ex%d", i+1)] = slice.MapInterface(g, func(i int, v interface{}) interface{} {
-			return entryToMap(v.(Entry))
+		mm[fmt.Sprintf("ex%d", i+1)] = slice.Map(g, func(_ int, value Entry) map[string]string {
+			return entryToMap(value)
 		})
 	}
 	return mm

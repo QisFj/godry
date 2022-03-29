@@ -46,7 +46,7 @@ func (b QueryBinding) bind(r *http.Request, v interface{}) error {
 
 type queryBindingSetter struct {
 	values   url.Values
-	usedKeys set.String
+	usedKeys set.Set[string]
 }
 
 func newQueryBindingSetter(values url.Values) *queryBindingSetter {
@@ -62,7 +62,7 @@ func newQueryBindingSetter(values url.Values) *queryBindingSetter {
 	}
 	return &queryBindingSetter{
 		values:   newValues,
-		usedKeys: set.String{},
+		usedKeys: set.Set[string]{},
 	}
 }
 
@@ -105,11 +105,11 @@ func (s *queryBindingSetter) set(v reflect.Value, sfs []reflect.StructField, sf 
 
 func queryBindingSetterGetKey(sfs []reflect.StructField, sf reflect.StructField) string {
 	sfs = append(sfs, sf)
-	slice.Filter(&sfs, func(index int) bool {
+	slice.FilterOn(&sfs, func(index int) bool {
 		return !sfs[index].Anonymous
 	})
-	return strings.Join(slice.MapString(sfs, func(i int, v interface{}) string {
-		return name.ToSnakeCase(v.(reflect.StructField).Name)
+	return strings.Join(slice.Map(sfs, func(_ int, v reflect.StructField) string {
+		return name.ToSnakeCase(v.Name)
 	}), ".")
 }
 

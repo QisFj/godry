@@ -9,9 +9,9 @@ import (
 )
 
 func TestHeap(t *testing.T) {
-	randArray := func() []interface{} {
+	randArray := func() []string {
 		n := 1000 // 000 -> 999
-		array := make([]interface{}, n)
+		array := make([]string, n)
 		for i := 0; i < n; i++ {
 			array[i] = fmt.Sprintf("%03d", i)
 		}
@@ -22,9 +22,9 @@ func TestHeap(t *testing.T) {
 		return array
 	}
 	t.Run("normal", func(t *testing.T) {
-		heap := Heap{
-			Less: func(o1, o2 interface{}) bool {
-				return o1.(string) < o2.(string)
+		heap := Heap[string]{
+			Less: func(o1, o2 string) bool {
+				return o1 < o2
 			},
 		}
 		for _, v := range randArray() {
@@ -35,9 +35,9 @@ func TestHeap(t *testing.T) {
 		}
 	})
 	t.Run("sized", func(t *testing.T) {
-		heap := Heap{
-			Less: func(o1, o2 interface{}) bool {
-				return o1.(string) < o2.(string)
+		heap := Heap[string]{
+			Less: func(o1, o2 string) bool {
+				return o1 < o2
 			},
 			Size: 10,
 		}

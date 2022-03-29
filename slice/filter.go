@@ -1,30 +1,32 @@
 package slice
 
-import "reflect"
+func Filter[I any](slice []I, f func(index int, value I) (keep bool)) []I {
+	if slice == nil { // do nothing
+		return nil
+	}
+	filtered := make([]I, 0, len(slice))
+	for i := 0; i < len(slice); i++ {
+		if f(i, slice[i]) {
+			filtered = append(filtered, slice[i])
+		}
+	}
+	return filtered
+}
 
-func Filter(slice interface{}, f func(index int) bool) {
+// FilterOn is in-place filter of a slice.
+func FilterOn[I any](slice *[]I, f func(index int) (keep bool)) {
 	if slice == nil { // do nothing
 		return
 	}
-	sv := reflect.ValueOf(slice)
-	if sv.IsNil() { // do nothing
-		return
-	}
-	if sv.Kind() != reflect.Ptr {
-		panic("slice must be a pointer to a slice")
-	}
-	sv = sv.Elem()
-	// reflect.Swapper check if sv.Interface() return a slice
-	// if not, panic
-	swapper := reflect.Swapper(sv.Interface())
 	var newLength int
-	for i := 0; i < sv.Len(); i++ {
+	for i := 0; i < len(*slice); i++ {
 		if f(i) {
 			if i != newLength {
-				swapper(i, newLength)
+				// move slice[i] to slice[newLength]
+				(*slice)[newLength] = (*slice)[i]
 			}
 			newLength++
 		}
 	}
-	sv.SetLen(newLength)
+	*slice = (*slice)[:newLength]
 }
