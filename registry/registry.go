@@ -2,57 +2,58 @@ package registry
 
 import (
 	"fmt"
-	"reflect"
+	"strings"
 )
 
 // Registry provider Register and Get
 // zero value is not ready for use, New it
-type Registry struct {
-	itemType         reflect.Type
-	unregisterReturn func(name string) interface{}
-
-	items map[string]interface{}
+//
+// this is a map, but
+// - can't Register a name twice, panic if it happens
+// - can get a hook on Get an unregistered name
+//
+// after go support generics type, it seems not need to use this package.
+type Registry[T any] struct {
+	name             string
+	unregisterReturn func(name string) T
+	items            map[string]T
 }
 
-func New(
-	itemType reflect.Type,
-	unregisterReturn func(name string) interface{},
-) *Registry {
-	return &Registry{
-		itemType:         itemType,
-		unregisterReturn: unregisterReturn,
+// AlwaysReturn the given value, it's an implementation of unregisterReturn
+func AlwaysReturn[T any](v T) func(name string) T {
+	return func(name string) T {
+		return v
+	}
+}
 
-		items: map[string]interface{}{},
+func New[T any](
+	name string,
+	unregisterReturn func(name string) T,
+) *Registry[T] {
+	return &Registry[T]{
+		name:             name,
+		unregisterReturn: unregisterReturn,
+		items:            map[string]T{},
 	}
 }
 
 // Register item
-// panic for unacceptable type
-// panic for duplicate name
-func (r *Registry) Register(name string, item interface{}) {
-	panicf := func(format string, v ...interface{}) string {
-		panic(fmt.Sprintf("failed to register %s: %q, %s", r.itemType.Name(), name, fmt.Sprintf(format, v...)))
-	}
-	itemType := reflect.TypeOf(item)
-	if r.itemType.Kind() == reflect.Interface {
-		if !itemType.Implements(r.itemType) {
-			panicf("unacceptable type: %s, not implement", r.itemType.Name())
-		}
-	} else {
-		if !itemType.ConvertibleTo(r.itemType) {
-			panicf("unacceptable type: %s, not convertable", r.itemType.Name())
-		}
-		item = reflect.ValueOf(item).Convert(r.itemType).Interface()
-	}
-
+func (r *Registry[T]) Register(name string, item T) {
 	_, exist := r.items[name]
 	if exist {
-		panicf("duplicate name: %q", name)
+		msg := strings.Builder{}
+		msg.WriteString("failed to register")
+		if r.name != "" {
+			msg.WriteString(fmt.Sprintf("(registry=%s)", r.name))
+		}
+		msg.WriteString(fmt.Sprintf(" %q", name))
+		msg.WriteString(": duplicate name")
+		panic(msg.String())
 	}
 	r.items[name] = item
 }
 
-func (r *Registry) Get(name string) interface{} {
+func (r *Registry[T]) Get(name string) T {
 	i, exist := r.items[name]
 	if exist {
 		return i
@@ -60,5 +61,5 @@ func (r *Registry) Get(name string) interface{} {
 	if r.unregisterReturn != nil {
 		return r.unregisterReturn(name)
 	}
-	return nil
+	return i // i should be zero value to T
 }

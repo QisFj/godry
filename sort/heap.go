@@ -1,14 +1,14 @@
 package sort
 
-type Heap struct {
+type Heap[T any] struct {
 	// Options
-	Less func(o1, o2 interface{}) bool // required
-	Size int                           // optional, 0 to not limit
+	Less func(o1, o2 T) bool // required
+	Size int                 // optional, 0 to not limit
 
-	heap []interface{}
+	heap []T
 }
 
-func (h *Heap) Append(v interface{}) {
+func (h *Heap[T]) Append(v T) {
 	if h.Size != 0 && h.Size == len(h.heap) {
 		if h.Less(h.heap[0], v) {
 			// no need append
@@ -23,7 +23,7 @@ func (h *Heap) Append(v interface{}) {
 	}
 }
 
-func (h *Heap) Dump() []interface{} {
+func (h *Heap[T]) Dump() []interface{} {
 	result := make([]interface{}, len(h.heap))
 	for n := len(h.heap) - 1; n >= 0; n-- {
 		result[n] = h.heap[0]
@@ -34,7 +34,7 @@ func (h *Heap) Dump() []interface{} {
 	return result
 }
 
-func (h *Heap) rise(idx int) {
+func (h *Heap[T]) rise(idx int) {
 	for idx != 0 {
 		if idx == 0 {
 			// already risen to the top
@@ -50,7 +50,7 @@ func (h *Heap) rise(idx int) {
 	}
 }
 
-func (h *Heap) dive(idx int) {
+func (h *Heap[T]) dive(idx int) {
 	for {
 		l, r := idx*2+1, idx*2+2
 		if l >= len(h.heap) {

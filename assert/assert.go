@@ -2,8 +2,7 @@ package assert
 
 import (
 	"fmt"
-
-	"github.com/QisFj/godry/slice"
+	"strings"
 )
 
 //go:generate go run type_assert.gen.go
@@ -14,10 +13,15 @@ type Assertion struct {
 }
 
 func (a Assertion) String() string {
-	return a.Message + slice.Reduce(slice.KVsOfMap(a.KVs), "", func(reduceValue interface{}, i int, v interface{}) interface{} {
-		kv := v.(slice.KV)
-		return reduceValue.(string) + fmt.Sprintf("\n\t* %s=%v", kv.Key, kv.Value)
-	}).(string)
+	sb := strings.Builder{}
+	sb.WriteString(a.Message)
+	for k, v := range a.KVs {
+		sb.WriteString("\n\t* ")
+		sb.WriteString(k)
+		sb.WriteByte('=')
+		sb.WriteString(fmt.Sprintf("%v", v))
+	}
+	return sb.String()
 }
 
 func Assert(assert bool, message string, kvs map[string]interface{}, opts ...ViolationOpt) {

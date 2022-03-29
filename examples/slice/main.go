@@ -1,12 +1,3 @@
-# Package slice
-
-do something for a slice.
-
-## Usage
-
-[example](../examples/slice/main.go)
-
-```go
 package main
 
 import (
@@ -28,12 +19,3 @@ func main() {
 	})
 	log.Printf("after filter: %#v\n", ss)
 }
-```
-
-## Map
-
-Map a slice to another slice.
-
-## Filter
-
-Filter some elements of slice.
