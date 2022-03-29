@@ -1,105 +1,53 @@
 package set
 
 import (
-	"reflect"
+	"golang.org/x/exp/constraints"
+	"golang.org/x/exp/maps"
 )
 
-//go:generate go run set.gen.go
+type Set[V constraints.Ordered] map[V]struct{}
 
-type T struct {
-	t reflect.Type // set key type
-	m reflect.Value
-}
-
-func NewT(t reflect.Type) T {
-	set := T{}
-	set.New(t)
+func Of[V constraints.Ordered](values ...V) Set[V] {
+	set := Set[V]{}
+	set.Add(values...)
 	return set
 }
 
-var setValue = struct{}{}
-var setValueRV = reflect.ValueOf(setValue)
-var setValueRT = reflect.TypeOf(setValue)
-
-func (set *T) New(t reflect.Type) {
-	set.t = t
-	set.m = reflect.MakeMap(reflect.MapOf(t, setValueRT))
-}
-
-func (set *T) add(e reflect.Value) {
-	set.m.SetMapIndex(e, setValueRV)
-}
-
-func (set *T) Add(es ...interface{}) {
-	for _, e := range es {
-		set.add(reflect.ValueOf(e))
+func (s *Set[V]) Add(values ...V) {
+	for _, v := range values {
+		(*s)[v] = struct{}{}
 	}
 }
 
-func (set T) List() interface{} {
-	l := reflect.MakeSlice(reflect.SliceOf(set.t), 0, set.m.Len())
-	l = reflect.Append(l, set.m.MapKeys()...)
-	return l.Interface()
-}
-
-func (set T) contains(e reflect.Value) bool {
-	return set.m.MapIndex(e) != reflect.Value{}
-}
-
-func (set T) Contains(e interface{}) bool {
-	return set.contains(reflect.ValueOf(e))
-}
-
-func (set T) ContainsAny(es ...interface{}) bool {
-	for _, e := range es {
-		if set.Contains(e) {
-			return true
-		}
+func (s *Set[V]) Remove(values ...V) {
+	for _, v := range values {
+		delete(*s, v)
 	}
-	return false
 }
 
-func (set T) ContainsAll(es ...interface{}) bool {
-	for _, e := range es {
-		if !set.Contains(e) {
+func (s Set[V]) Contains(value V) bool {
+	_, ok := s[value]
+	return ok
+}
+
+func (s Set[V]) ContainsAll(values ...V) bool {
+	for _, v := range values {
+		if !s.Contains(v) {
 			return false
 		}
 	}
 	return true
 }
 
-func TDiff(set1, set2 T) (both, only1, only2 T) {
-	if set1.t != set2.t {
-		panic("two sets must be same type")
-	}
-	both, only1, only2 = NewT(set1.t), NewT(set1.t), NewT(set1.t)
-	for _, v := range set1.m.MapKeys() {
-		if set2.contains(v) {
-			both.add(v)
-		} else {
-			only1.add(v)
+func (s Set[V]) ContainsAny(values ...V) bool {
+	for _, v := range values {
+		if s.Contains(v) {
+			return true
 		}
 	}
-	for _, v := range set2.m.MapKeys() {
-		if set1.contains(v) {
-			both.add(v)
-		} else {
-			only2.add(v)
-		}
-	}
-	return
+	return false
 }
 
-func TMerge(set1, set2 T) T {
-	if set1.t != set2.t {
-		panic("two sets must be same type")
-	}
-	set := NewT(set1.t)
-	for _, v := range set1.m.MapKeys() {
-		set.m.SetMapIndex(v, setValueRV)
-	}
-	for _, v := range set2.m.MapKeys() {
-		set.m.SetMapIndex(v, setValueRV)
-	}
-	return set
-}
+func (s Set[V]) List() []V { return maps.Keys(s) }
+
+func (s Set[V]) Clone() Set[V] { return maps.Clone(s) }
