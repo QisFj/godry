@@ -108,7 +108,7 @@ func TUnion(s1, s2 T) T {
 	return s1
 }
 
-func TIntersection(s1, s2 T) T {
+func TIntersect(s1, s2 T) T {
 	s1 = s1.Clone()
 	for _, v := range s1.m.MapKeys() {
 		if !s2.contains(v) {

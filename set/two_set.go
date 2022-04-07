@@ -8,7 +8,7 @@ func Union[V comparable](s1, s2 Set[V]) Set[V] {
 	return s1
 }
 
-func Intersection[V comparable](s1, s2 Set[V]) Set[V] {
+func Intersect[V comparable](s1, s2 Set[V]) Set[V] {
 	s1 = s1.Clone()
 	for v := range s1 {
 		if !s2.Contains(v) {

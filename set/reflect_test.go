@@ -16,8 +16,8 @@ func TestT(t *testing.T) {
 		requireEqualAfterSort(t, []int{1, 2, 3, 4, 5, 6, 7}, list)
 	})
 
-	t.Run("intersection", func(t *testing.T) {
-		list := TIntersection(set1, set2).List().([]int)
+	t.Run("intersect", func(t *testing.T) {
+		list := TIntersect(set1, set2).List().([]int)
 		requireEqualAfterSort(t, []int{3, 4, 5}, list)
 	})
 
