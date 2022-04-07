@@ -1,10 +1,14 @@
 package set
 
-import "golang.org/x/exp/maps"
-
 // another_set.go contains thous functions like (s Set)func(another Set)
 
-func (s Set[V]) AddSet(another Set[V]) { maps.Copy(s, another) }
+func (s Set[V]) AddSet(another Set[V]) {
+	// NOTE: do not use maps.Copy here
+	// when V is a struct which contain more than one filed, use maps.Copy leads compile error
+	for v := range another {
+		s[v] = struct{}{}
+	}
+}
 
 func (s Set[V]) RemoveSet(another Set[V]) {
 	for v := range another {
