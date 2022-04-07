@@ -17,7 +17,7 @@ func TestEachUntil(t *testing.T) {
 			count++
 		}, 50*time.Millisecond, stopCh)
 	}()
-	time.Sleep(210 * time.Millisecond)
+	time.Sleep(220 * time.Millisecond)
 	close(stopCh)
 	require.Equal(t, 4, count) // 50, 100, 150, 200
 }
@@ -32,7 +32,7 @@ func TestEachUntilImmediately(t *testing.T) {
 			count++
 		}, 50*time.Millisecond, stopCh)
 	}()
-	time.Sleep(210 * time.Millisecond)
+	time.Sleep(220 * time.Millisecond)
 	close(stopCh)
 	require.Equal(t, 5, count) // 0, 50, 100, 150, 200
 }

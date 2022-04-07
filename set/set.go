@@ -1,13 +1,12 @@
 package set
 
 import (
-	"golang.org/x/exp/constraints"
 	"golang.org/x/exp/maps"
 )
 
-type Set[V constraints.Ordered] map[V]struct{}
+type Set[V comparable] map[V]struct{}
 
-func Of[V constraints.Ordered](values ...V) Set[V] {
+func Of[V comparable](values ...V) Set[V] {
 	set := Set[V]{}
 	set.Add(values...)
 	return set

@@ -11,11 +11,31 @@ import (
 // 0 or other value for no certain order
 var MarshalOrder = 0
 
-func (set Set[V]) MarshalJSON() ([]byte, error) {
-	if set == nil {
+func (s Set[V]) MarshalJSON() ([]byte, error) {
+	if s == nil {
 		return []byte("null"), nil
 	}
-	list := set.List()
+	return json.Marshal(s.List())
+}
+
+func (s *Set[V]) UnmarshalJSON(data []byte) error {
+	if len(data) == 4 && string(data) == "null" {
+		(*s) = nil // set the map to nil, not pointer
+		return nil
+	}
+	var l []V
+	if err := json.Unmarshal(data, &l); err != nil {
+		return err
+	}
+	(*s) = Of(l...)
+	return nil
+}
+
+func (s SortableSet[V]) MarshalJSON() ([]byte, error) {
+	if s == nil {
+		return []byte("null"), nil
+	}
+	list := Set[V](s).List()
 	switch MarshalOrder {
 	case 1:
 		sort.Slice(list, func(i, j int) bool { return list[i] < list[j] }) // ensure return with certain order
@@ -25,15 +45,15 @@ func (set Set[V]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(list)
 }
 
-func (set *Set[V]) UnmarshalJSON(data []byte) error {
+func (s *SortableSet[V]) UnmarshalJSON(data []byte) error {
 	if len(data) == 4 && string(data) == "null" {
-		(*set) = nil // set the map to nil, not pointer
+		(*s) = nil // set the map to nil, not pointer
 		return nil
 	}
 	var l []V
 	if err := json.Unmarshal(data, &l); err != nil {
 		return err
 	}
-	(*set) = Of(l...)
+	(*s) = SortableSet[V](Of(l...))
 	return nil
 }
