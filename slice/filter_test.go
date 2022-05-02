@@ -63,8 +63,8 @@ func TestFilterOn(t *testing.T) {
 		{V1: 15, V2: 4},
 		{V1: 15, V2: 5},
 	}
-	filter := func(index int) bool {
-		return es[index].V1 >= es[index].V2 && es[index].V1%es[index].V2 == 0
+	filter := func(_ int, e E) bool {
+		return e.V1 >= e.V2 && e.V1%e.V2 == 0
 	}
 	t.Run("normal", func(t *testing.T) {
 		FilterOn(&es, filter)

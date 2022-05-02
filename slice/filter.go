@@ -14,19 +14,16 @@ func Filter[I any](slice []I, f func(index int, value I) (keep bool)) []I {
 }
 
 // FilterOn is in-place filter of a slice.
-func FilterOn[I any](slice *[]I, f func(index int) (keep bool)) {
+func FilterOn[I any](slice *[]I, f func(index int, value I) (keep bool)) {
 	if slice == nil { // do nothing
 		return
 	}
-	var newLength int
-	for i := 0; i < len(*slice); i++ {
-		if f(i) {
-			if i != newLength {
-				// move slice[i] to slice[newLength]
-				(*slice)[newLength] = (*slice)[i]
-			}
-			newLength++
+	// see: https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating
+	newSlice := (*slice)[:0]
+	for i, v := range *slice {
+		if f(i, v) {
+			newSlice = append(newSlice, v)
 		}
 	}
-	*slice = (*slice)[:newLength]
+	*slice = newSlice
 }

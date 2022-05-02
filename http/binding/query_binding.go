@@ -105,8 +105,8 @@ func (s *queryBindingSetter) set(v reflect.Value, sfs []reflect.StructField, sf 
 
 func queryBindingSetterGetKey(sfs []reflect.StructField, sf reflect.StructField) string {
 	sfs = append(sfs, sf)
-	slice.FilterOn(&sfs, func(index int) bool {
-		return !sfs[index].Anonymous
+	sfs = slice.Filter(sfs, func(_ int, v reflect.StructField) (keep bool) {
+		return !v.Anonymous
 	})
 	return strings.Join(slice.Map(sfs, func(_ int, v reflect.StructField) string {
 		return name.ToSnakeCase(v.Name)
