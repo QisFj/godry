@@ -128,6 +128,5 @@ func TestJSON(t *testing.T) {
 				require.Equal(t, SortableSet[int](nil), p.Set)
 			})
 		})
-
 	})
 }

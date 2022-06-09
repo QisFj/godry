@@ -20,14 +20,14 @@ func (s Set[V]) MarshalJSON() ([]byte, error) {
 
 func (s *Set[V]) UnmarshalJSON(data []byte) error {
 	if len(data) == 4 && string(data) == "null" {
-		(*s) = nil // set the map to nil, not pointer
+		*s = nil // set the map to nil, not pointer
 		return nil
 	}
 	var l []V
 	if err := json.Unmarshal(data, &l); err != nil {
 		return err
 	}
-	(*s) = Of(l...)
+	*s = Of(l...)
 	return nil
 }
 
@@ -47,13 +47,13 @@ func (s SortableSet[V]) MarshalJSON() ([]byte, error) {
 
 func (s *SortableSet[V]) UnmarshalJSON(data []byte) error {
 	if len(data) == 4 && string(data) == "null" {
-		(*s) = nil // set the map to nil, not pointer
+		*s = nil // set the map to nil, not pointer
 		return nil
 	}
 	var l []V
 	if err := json.Unmarshal(data, &l); err != nil {
 		return err
 	}
-	(*s) = SortableSet[V](Of(l...))
+	*s = SortableSet[V](Of(l...))
 	return nil
 }
