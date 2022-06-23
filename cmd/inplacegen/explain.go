@@ -1,13 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"regexp"
 	"strings"
 	"text/template"
 
+	"github.com/QisFj/godry/cexp"
 	"github.com/QisFj/godry/gen/graph"
 	"github.com/QisFj/godry/slice"
 )
@@ -66,7 +69,7 @@ func explain(lines []string, expName string) (resultLines []string, err error) {
 		if !ok {
 			return nil, fmt.Errorf("inplacegen (from=%s,to) not pair", fromName)
 		}
-		log.Printf("try explain %s line:%d to line:%d", fromName, last, i)
+		log.Printf("try to explain %s line:%d to line:%d", fromName, last, i)
 		var gened []string
 		gened, err = explainToGen(lines[last:i], prefix)
 		if err != nil {
@@ -107,15 +110,34 @@ func explainToGen(lines []string, prefix string) (result []string, err error) {
 }
 
 func explainToArg(lines []string) (arg Arg, err error) {
-	n := mustInt(strings.Trim(lines[0], " \t"))
+	trimmedFirstLine := strings.Trim(lines[0], " \t")
+	if strings.HasPrefix(trimmedFirstLine, "import ") {
+		filename := strings.Trim(trimmedFirstLine[7:], " \t")
+		lines, err = ReadFileAsLines(filename)
+		if err != nil {
+			return Arg{}, fmt.Errorf("import %q error: %w", filename, err)
+		}
+		trimmedFirstLine = strings.Trim(lines[0], " \t")
+		log.Printf("imported %q", filename)
+	}
+	n := mustInt(trimmedFirstLine)
 	for i := 1; i <= n; i++ {
 		var ex bool
 		var g Group
+		dataContent := []byte(lines[i])
 		if strings.HasPrefix(lines[i], "*") {
 			ex = true
-			lines[i] = lines[i][1:]
+			dataContent = dataContent[1:]
 		}
-		if err = json.Unmarshal([]byte(lines[i]), &g); err != nil {
+		if bytes.HasPrefix(dataContent, []byte("import ")) {
+			filename := strings.Trim(string(dataContent[7:]), " \t")
+			dataContent, err = ioutil.ReadFile(filename)
+			if err != nil {
+				return Arg{}, fmt.Errorf("import %q error: %w", filename, err)
+			}
+			log.Printf("imported %q as %sData", filename, cexp.String(ex, "Ex", ""))
+		}
+		if err = json.Unmarshal(dataContent, &g); err != nil {
 			return Arg{}, fmt.Errorf("json unmarshal error: %w", err)
 		}
 		if !ex {

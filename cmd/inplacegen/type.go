@@ -10,7 +10,7 @@ type Data []Group // objects with different type
 
 func (data Data) Len() int { return len(data) }
 
-func (data Data) Get(i int) graph.LayoutI { return data[i] }
+func (data Data) Get(i int) graph.LayerI { return data[i] }
 
 func (group Group) Len() int { return len(group) }
 

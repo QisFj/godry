@@ -10,7 +10,7 @@ For example, start line is: `\t// ;INPLACEGEN_(_)_FROM\n`, prefix is `\t// ;` .
 
 When generate, only the generated text part will be overwritten, and it will be always overwritten.
 
- ## Data
+## Data
 
 The first line after start line is the first data line.
 
@@ -99,3 +99,11 @@ Data := map[string]interface{}{
 ## Generated Text
 
 Generated text be replace by template output in-place.
+
+## Import
+
+can use `import $filename`, to treat content in that file as Data and Template. the line after `import $filename` would keep, but not used.
+
+can use `import $filename` in each data line to import file content as Data.
+
+can't import template.

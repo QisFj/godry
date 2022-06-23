@@ -1,13 +1,22 @@
 package graph
 
 type Iter struct {
-	g       Interface
+	g       GraphI
 	iter    []int
 	reverse bool // iter from 1st layout
 	gap     bool // gap for loop
 }
 
-func NewIter(g Interface, reverse bool) *Iter {
+func NewIter(g GraphI, reverse bool) *Iter {
+	if g == nil || g.Len() == 0 {
+		return nil
+	}
+	for i := 0; i < g.Len(); i++ {
+		l := g.Get(i)
+		if l == nil || l.Len() == 0 {
+			return nil
+		}
+	}
 	return &Iter{g: g, iter: make([]int, g.Len()), gap: true, reverse: reverse}
 }
 
@@ -35,7 +44,8 @@ func (iter *Iter) Next() bool {
 func (iter *Iter) Get() []NodeI {
 	nodes := make([]NodeI, 0, len(iter.iter))
 	for i, it := range iter.iter {
-		nodes = append(nodes, iter.g.Get(i).Get(it%iter.g.Get(i).Len()))
+		layer := iter.g.Get(i)
+		nodes = append(nodes, layer.Get(it%layer.Len()))
 	}
 	return nodes
 }

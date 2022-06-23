@@ -24,11 +24,10 @@ func main() {
 		log.Fatalf("no go file")
 	}
 
-	fileContent, err := ioutil.ReadFile(file)
+	lines, err := ReadFileAsLines(file)
 	if err != nil {
-		log.Fatalf("read go file error: %s", err)
+		log.Fatalf("read go file %q error: %s", file, err)
 	}
-	lines := strings.Split(string(fileContent), "\n")
 	var result []string
 	result, err = explain(lines, name)
 	if err != nil {
