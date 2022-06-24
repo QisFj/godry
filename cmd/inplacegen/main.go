@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,8 +15,10 @@ const (
 
 func main() {
 	var name, file string
+	var printOnly bool
 	flag.StringVar(&name, "name", "", "name")
 	flag.StringVar(&file, "file", os.Getenv("GOFILE"), "go file")
+	flag.BoolVar(&printOnly, "print-only", false, "print only instead of overwrite file")
 	flag.Parse()
 
 	log.Printf("flags: name=%s, file=%s", name, file)
@@ -33,7 +36,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("explain error: %s", err)
 	}
-	err = ioutil.WriteFile(file, []byte(strings.Join(result, "\n")), 0666)
+	resultText := strings.Join(result, "\n")
+	if printOnly {
+		fmt.Println(resultText)
+		return
+	}
+	err = ioutil.WriteFile(file, []byte(resultText), 0666)
 	if err != nil {
 		log.Fatalf("write file error: %s", err)
 	}
