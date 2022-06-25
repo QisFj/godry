@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,7 +11,9 @@ import (
 
 	"github.com/QisFj/godry/cexp"
 	"github.com/QisFj/godry/gen/graph"
+	"github.com/QisFj/godry/name"
 	"github.com/QisFj/godry/slice"
+	"github.com/yosuke-furukawa/json5/encoding/json5"
 )
 
 var (
@@ -137,7 +138,7 @@ func explainToArg(lines []string) (arg Arg, err error) {
 			}
 			log.Printf("imported %q as %sData", filename, cexp.String(ex, "Ex", ""))
 		}
-		if err = json.Unmarshal(dataContent, &g); err != nil {
+		if err = json5.Unmarshal(dataContent, &g); err != nil {
 			return Arg{}, fmt.Errorf("json unmarshal error: %w", err)
 		}
 		if !ex {
@@ -158,7 +159,10 @@ func (arg Arg) Gen() (result []string) {
 		})
 		replaced := replaceT(arg.Template, leftD, rightD, entries)
 		sb := &strings.Builder{}
-		err := template.Must(template.New("").Delims(leftD, rightD).Parse(replaced)).Execute(sb, TemplateData(entries, arg.ExData))
+		err := template.Must(template.New("").Delims(leftD, rightD).Funcs(template.FuncMap{
+			"ToSnake": name.ToSnakeCase,
+			"ToCamle": name.ToCamelCase,
+		}).Parse(replaced)).Execute(sb, TemplateData(entries, arg.ExData))
 		if err != nil {
 			log.Fatalf("execute template error: %s", err)
 		}
