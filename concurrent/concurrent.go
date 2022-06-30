@@ -8,8 +8,6 @@ import (
 	"github.com/QisFj/godry/multierr"
 )
 
-type FuncMayError func() error
-
 func Do(functions ...FuncMayError) error {
 	fs := make([]FuncMayError, 0, len(functions))
 	for _, f := range functions {
@@ -25,17 +23,18 @@ func Do(functions ...FuncMayError) error {
 	if len(fs) == 1 {
 		errs.AppendOnlyNotNil(fs[0]())
 		return errs.Error()
-	} else {
-		wg := sync.WaitGroup{}
-		for _, function := range fs {
-			wg.Add(1)
-			go func(f FuncMayError) {
-				defer wg.Done()
-				errs.AppendOnlyNotNil(f())
-			}(function)
-		}
-		wg.Wait()
 	}
+
+	wg := sync.WaitGroup{}
+	for _, function := range fs {
+		wg.Add(1)
+		go func(f FuncMayError) {
+			defer wg.Done()
+			errs.AppendOnlyNotNil(f())
+		}(function)
+	}
+	wg.Wait()
+
 	return errs.Error()
 }
 

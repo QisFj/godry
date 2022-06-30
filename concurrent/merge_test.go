@@ -13,12 +13,12 @@ func TestMerge(t *testing.T) {
 		require.NoError(t, Merge(nil, nil))
 	})
 	t.Run("with nil", func(t *testing.T) {
-		require.NoError(t, Merge([]EachFunc{nil}, nil))
+		require.NoError(t, Merge([]FuncWithResultMayError{nil}, nil))
 	})
 	t.Run("normal", func(t *testing.T) {
 		slice := []int{0, 0, 0}
 		sum := 0
-		require.NoError(t, Merge([]EachFunc{
+		require.NoError(t, Merge([]FuncWithResultMayError{
 			func() (interface{}, error) {
 				time.Sleep(20 * time.Millisecond)
 				slice[0] = 0
@@ -44,7 +44,7 @@ func TestMerge(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
 		slice := []int{0, 0, 0}
 		sum := 0
-		require.Error(t, Merge([]EachFunc{
+		require.Error(t, Merge([]FuncWithResultMayError{
 			func() (interface{}, error) {
 				time.Sleep(20 * time.Millisecond)
 				slice[0] = 0
@@ -73,7 +73,7 @@ func TestMerge(t *testing.T) {
 	t.Run("error on merge", func(t *testing.T) {
 		slice := []int{0, 0, 0}
 		sum := 0
-		require.Error(t, Merge([]EachFunc{
+		require.Error(t, Merge([]FuncWithResultMayError{
 			func() (interface{}, error) {
 				time.Sleep(20 * time.Millisecond)
 				slice[0] = 0
@@ -103,7 +103,7 @@ func TestMerge(t *testing.T) {
 	t.Run("panic", func(t *testing.T) {
 		slice := []int{0, 0, 0}
 		sum := 0
-		err := Merge([]EachFunc{
+		err := Merge([]FuncWithResultMayError{
 			func() (interface{}, error) {
 				time.Sleep(20 * time.Millisecond)
 				slice[0] = 0
@@ -131,7 +131,7 @@ func TestMerge(t *testing.T) {
 	t.Run("panic on merge", func(t *testing.T) {
 		slice := []int{0, 0, 0}
 		sum := 0
-		err := Merge([]EachFunc{
+		err := Merge([]FuncWithResultMayError{
 			func() (interface{}, error) {
 				time.Sleep(20 * time.Millisecond)
 				slice[0] = 0

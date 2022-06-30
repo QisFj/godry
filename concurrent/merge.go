@@ -9,10 +9,10 @@ import (
 type EachFunc func() (interface{}, error)
 type MergeFunc func(i int, v interface{}) error
 
-func Merge(eachFuncs []EachFunc, merge MergeFunc) error {
+func Merge(eachFuncs []FuncWithResultMayError, merge MergeFunc) error {
 	mu := sync.Mutex{}
 	return Foreach(eachFuncs, func(i int, v interface{}) error {
-		f := v.(EachFunc) // nolint: errcheck
+		f := v.(FuncWithResultMayError) // nolint: errcheck
 		if f == nil {
 			return nil
 		}
@@ -30,7 +30,7 @@ func Merge(eachFuncs []EachFunc, merge MergeFunc) error {
 }
 
 func MergeForeach(slice interface{}, f func(i int, v interface{}) (interface{}, error), merge MergeFunc) error {
-	var fs []EachFunc
+	var fs []FuncWithResultMayError
 	uslice.Foreach(slice, func(i int, v interface{}) {
 		fs = append(fs, func() (interface{}, error) {
 			return f(i, v)
