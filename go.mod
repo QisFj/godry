@@ -1,6 +1,6 @@
 module github.com/QisFj/godry
 
-go 1.18
+go 1.22
 
 require (
 	github.com/go-playground/validator/v10 v10.5.0

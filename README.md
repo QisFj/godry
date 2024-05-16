@@ -18,7 +18,7 @@ golang utils.
 - [slice](./slice/README.md)
     + filter
     + map
-- [cexp](./cexp/README.md)
+- ~~cexp~~ (can be replaced by https://github.com/samber/lo )
 - [name](./name/README.md)
 - [assert](./assert/README.md)
 - [gen](./gen/README.md)

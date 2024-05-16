@@ -1,11 +1,14 @@
 package run
 
 import (
-	"reflect"
 	"sync"
+
+	"github.com/QisFj/godry/channels"
 )
 
-// LazyRunner run Run only when there is at least one supervisor
+// LazyRunner
+// call Run when at least one supervisor is added
+// stop Run when all supervisors are stopped
 type LazyRunner struct {
 	Run func(stopCh <-chan struct{})
 
@@ -36,35 +39,41 @@ func (lr *LazyRunner) run() {
 	stopCh := make(chan struct{})
 	go func() {
 		defer close(stopCh)
-		for {
-			lr.Locker.RLock()
-			stopChs := lr.supervisorStopChs
-			lr.Locker.RUnlock()
-
-			if len(stopChs) == 0 {
-				// optimization: use rlock to check, and use lock to check and set
-				lr.Locker.Lock()
-				if len(lr.supervisorStopChs) == 0 {
-					lr.running = false
-					lr.Locker.Unlock()
-					return
-				}
-				stopChs = lr.supervisorStopChs
-				lr.Locker.Unlock()
-			}
-
-			chosen, _, _ := selectChannels(stopChs)
-
-			lr.Locker.Lock()
-			lr.supervisorStopChs = append(lr.supervisorStopChs[:chosen], lr.supervisorStopChs[chosen+1:]...)
-			lr.Locker.Unlock()
-		}
+		lr.runSupervisorChecker()
 	}()
 	lr.Run(stopCh)
 	lr.Locker.Lock()
 	defer lr.Locker.Unlock()
 	close(lr.stoppedCh)
 	lr.stoppedCh = nil
+}
+
+func (lr *LazyRunner) runSupervisorChecker() {
+	for {
+		lr.Locker.RLock()
+		stopChs := lr.supervisorStopChs
+		lr.Locker.RUnlock()
+
+		if len(stopChs) == 0 {
+			// optimization: use rlock to check, and use lock to check and set
+			lr.Locker.Lock()
+			if len(lr.supervisorStopChs) == 0 {
+				lr.running = false
+				lr.Locker.Unlock()
+				break
+			}
+			stopChs = lr.supervisorStopChs
+			lr.Locker.Unlock()
+		}
+
+		chosen, _, _ := channels.Read(stopChs)
+
+		lr.Locker.Lock()
+		// optimization: swap chosen and last, and truncate
+		lr.supervisorStopChs[chosen], lr.supervisorStopChs[len(lr.supervisorStopChs)-1] = lr.supervisorStopChs[len(lr.supervisorStopChs)-1], lr.supervisorStopChs[chosen]
+		lr.supervisorStopChs = lr.supervisorStopChs[:len(lr.supervisorStopChs)-1]
+		lr.Locker.Unlock()
+	}
 }
 
 func (lr *LazyRunner) Wait() {
@@ -74,18 +83,4 @@ func (lr *LazyRunner) Wait() {
 	if stoppedCh != nil {
 		<-stoppedCh
 	}
-}
-
-func selectChannels[T any](chans []<-chan T) (chosenIndex int, value T, ok bool) {
-	cases := make([]reflect.SelectCase, len(chans))
-	for i, ch := range chans {
-		cases[i] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(ch)}
-	}
-	var rValue reflect.Value
-	chosenIndex, rValue, ok = reflect.Select(cases)
-	if ok {
-		// not closed, should read value
-		value = rValue.Interface().(T)
-	}
-	return
 }

@@ -48,8 +48,8 @@ func CheckUntil(f func() bool, dur time.Duration, stopCh <-chan struct{}) bool {
 	}
 }
 
-// CheckUntilImmediately is an immediately version of CheckUntil
-// CheckUntilImmediatelylike EachUntilImmediately to EachUntil
+// CheckUntilImmediately is an immediate version of CheckUntil
+// CheckUntilImmediately like EachUntilImmediately to EachUntil
 func CheckUntilImmediately(f func() bool, dur time.Duration, stopCh <-chan struct{}) bool {
 	select {
 	case <-stopCh:
