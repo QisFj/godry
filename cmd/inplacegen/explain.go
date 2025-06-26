@@ -3,13 +3,13 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"github.com/samber/lo"
 	"log"
+	"os"
 	"regexp"
 	"strings"
 	"text/template"
 
-	"github.com/QisFj/godry/cexp"
 	"github.com/QisFj/godry/gen/graph"
 	"github.com/QisFj/godry/name"
 	"github.com/QisFj/godry/slice"
@@ -132,11 +132,11 @@ func explainToArg(lines []string) (arg Arg, err error) {
 		}
 		if bytes.HasPrefix(dataContent, []byte("import ")) {
 			filename := strings.Trim(string(dataContent[7:]), " \t")
-			dataContent, err = ioutil.ReadFile(filename)
+			dataContent, err = os.ReadFile(filename)
 			if err != nil {
 				return Arg{}, fmt.Errorf("import %q error: %w", filename, err)
 			}
-			log.Printf("imported %q as %sData", filename, cexp.String(ex, "Ex", ""))
+			log.Printf("imported %q as %sData", filename, lo.If(ex, "Ex").Else(""))
 		}
 		if err = json5.Unmarshal(dataContent, &g); err != nil {
 			return Arg{}, fmt.Errorf("json unmarshal error: %w", err)
