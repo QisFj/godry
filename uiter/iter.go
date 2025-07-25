@@ -1,8 +1,9 @@
 package uiter
 
 import (
-	"github.com/samber/lo"
 	"iter"
+
+	"github.com/samber/lo"
 )
 
 // Static return an iter.Seq return certain value
@@ -138,4 +139,26 @@ func Dump2[K, V any](it iter.Seq2[K, V], capHint ...int) []lo.Tuple2[K, V] {
 		ret = append(ret, lo.T2(k, v))
 	}
 	return ret
+}
+
+// Map maps a function over an iter.Seq
+func Map[T, R any](it iter.Seq[T], f func(T) R) iter.Seq[R] {
+	return func(yield func(R) bool) {
+		for v := range it {
+			if !yield(f(v)) {
+				return
+			}
+		}
+	}
+}
+
+// Map2 maps a function over an iter.Seq2
+func Map2[T1, T2, R1, R2 any](it iter.Seq2[T1, T2], f func(T1, T2) (R1, R2)) iter.Seq2[R1, R2] {
+	return func(yield func(R1, R2) bool) {
+		for k, v := range it {
+			if !yield(f(k, v)) {
+				return
+			}
+		}
+	}
 }
